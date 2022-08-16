@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:    
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:0.14.2
+    hostname: localstack
+    networks:
+      - localstack-net
+    ports:
+      - "4566-4599:4566-4599"
+    environment:
+      - SERVICES=s3
+    volumes:
+      - ./bin:/docker-entrypoint-initaws.d
+
+  aws:
+    container_name: aws-cli
+    image: amazon/aws-cli:latest
+    environment:
+      - AWS_REGION=eu-west-2
+      - AWS_ACCESS_KEY_ID=xyz
+      - AWS_SECRET_ACCESS_KEY=aaa
+    entrypoint: tail -f /dev/null
+    networks:
+      - localstack-net
+    depends_on:
+      - localstack
+networks:
+    localstack-net:
+      external: false
+      driver: bridge
+      name: localstack-net
