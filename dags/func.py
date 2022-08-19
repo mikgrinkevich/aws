@@ -52,3 +52,7 @@ def process_pyspark(filename):
     .drop(count_by_return_name.station_name) \
         
     return result
+
+# df = pd.read_csv('data/date.csv')
+# all_stuff = set(df.month)
+# print(all_stuff) 

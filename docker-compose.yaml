@@ -8,10 +8,18 @@ services:
     networks:
       - localstack-net
     ports:
+      - "127.0.0.1:53:53"
+      - "443:443"
       - "4566-4599:4566-4599"
     environment:
-      - SERVICES=s3
+      - DATA_DIR=/tmp/localstack/data
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
+      - LAMBDA_EXECUTOR=local
+      - SERVICES=s3, lambda, dynamodb, sqs, sns
     volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
       - ./bin:/docker-entrypoint-initaws.d
 
   aws:
