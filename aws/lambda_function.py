@@ -1,26 +1,45 @@
 import boto3
 import pandas as pd
 import io
+from decimal import Decimal
+import json
+
 
 
 def lambda_handler(event, context):
     msg = event['Records'][0]['body']
-    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-    table = dynamodb.Table("msg")
+    print(msg)
+
+    dynamodb = boto3.resource('dynamodb', 
+        region_name='us-east-1',
+        aws_access_key_id='xyz',
+        aws_secret_access_key='aaa',
+        endpoint_url='http://localstack:4566')
+
+    table = dynamodb.Table(msg)
 
     # get dataframe
-    aws_session = boto3.Session()
-    client = aws_session.client('s3', region_name="us-east-1")
+    client = boto3.client('s3', 
+        region_name="us-east-1",
+        aws_access_key_id='xyz',
+        aws_secret_access_key='aaa', 
+        endpoint_url='http://localstack:4566')
 
     # get object
-    csv_obj = client.get_object(Bucket="test", Key='data/'+msg+'.csv')
+    csv_obj = client.get_object(Bucket="test-bucket", Key=msg+'.csv')
     body = csv_obj['Body']
     df = pd.read_csv(io.BytesIO(body.read()))
 
     # DynamoDB put_items called
+    # overwrite_keys = ['departure', 'return_date'] if 'departure' else None
+    # with table.batch_writer(overwrite_by_pkeys=overwrite_keys) as batch:
     with table.batch_writer() as batch:
         for i, row in df.iterrows():
-            batch.put_item(Item=row.to_dict())
+            data = row.to_dict()
+            ddb_data = json.loads(json.dumps(data), parse_float=Decimal)
+            for item_key in ddb_data: 
+                ddb_data[item_key] = str(ddb_data[item_key])
+            batch.put_item(Item=ddb_data)
     print("DynamoDB put_items completed")
 
     

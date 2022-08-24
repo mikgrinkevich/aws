@@ -49,7 +49,7 @@ def send_message(client):
         }
     },
     MessageBody=(
-        'data/16_05.csv'
+        '16_05'
         )
     )
     print(response['MessageId'])
@@ -72,6 +72,29 @@ def receive_message(client):
 )
     print(response)
 
+def aws_file():
+    with open('my-deployment-package.zip', 'rb') as file_data:
+        bytes_content = file_data.read()
+    return bytes_content
+
+
+def create_lambda(client):
+    response = client.create_function(
+    Role='arn:aws:iam:: 123456789012:role/lambda-rol',
+    FunctionName='function1',
+    Runtime='python3.8',
+    Handler='lambda_function.lambda_handler',
+    Code=dict(ZipFile=aws_file()),
+    Timeout=900,
+    Environment={
+        'Variables': {
+            'Name': 'function1',
+            'Environment': 'prod'
+        }
+    },
+    )
+
+    print(response)
 
 def trigger_lambda(client):
     response = client.create_event_source_mapping(
@@ -82,10 +105,18 @@ def trigger_lambda(client):
 )
     print(response)
 
+def delete_lambda(client):
+    response = client.delete_function(
+    FunctionName='function1'
+)
 
 
 
-# create_sqs()
-# trigger_lambda(create_client('lambda'))
+create_sqs()
+create_lambda(create_client('lambda'))
+trigger_lambda(create_client('lambda'))
 send_message(create_client('sqs'))
-# receive_message(create_client('sqs'))
+receive_message(create_client('sqs'))
+
+# delete_lambda(create_client('lambda'))
+

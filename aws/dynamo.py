@@ -49,21 +49,13 @@ def create_dynamodb_table(table_name):
             TableName=table_name,
             KeySchema=[
                 {
-                    'AttributeName': 'departure',
+                    'AttributeName': 'index',
                     'KeyType': 'HASH'
-                },
-                {
-                    'AttributeName': 'return_date',
-                    'KeyType': 'RANGE'
                 }
             ],
             AttributeDefinitions=[
                 {
-                    'AttributeName': 'departure',
-                    'AttributeType': 'S'
-                },
-                {
-                    'AttributeName': 'return_date',
+                    'AttributeName': 'index',
                     'AttributeType': 'S'
                 }
             ],

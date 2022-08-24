@@ -129,6 +129,9 @@ airflow.cfg
 airflow.db
 standalone_admin_password.txt
 webserver_config.py
+*.zip
+/package
+sqs_lambda.py
 logs
 *.csv
 

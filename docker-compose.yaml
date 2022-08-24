@@ -3,7 +3,7 @@ version: '3.8'
 services:    
   localstack:
     container_name: localstack
-    image: localstack/localstack:0.14.2
+    image: localstack/localstack:latest
     hostname: localstack
     networks:
       - localstack-net
@@ -14,12 +14,15 @@ services:
     environment:
       - DATA_DIR=/tmp/localstack/data
       - DEBUG=1
+      - DYNAMODB_SHARE_DB=1
       - AWS_DEFAULT_REGION=us-east-1
-      - LAMBDA_EXECUTOR=local
-      - SERVICES=s3, lambda, dynamodb, sqs, sns
+      - LAMBDA_EXECUTOR=docker-reuse
+      - LAMBDA_STAY_OPEN_MODE=0
+      - EDGE_PORT=4566
+      - SERVICES=s3, lambda, dynamodb, sqs, sns, serverless
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./bin:/docker-entrypoint-initaws.d
 
   aws:

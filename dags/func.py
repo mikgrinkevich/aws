@@ -17,14 +17,21 @@ AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 LOCALSTACK_URL = os.environ.get('LOCALSTACK_S3_URL')
 
+def get_list_of_months():
+    # getting a list to iterate over
+    df = pd.read_csv('data/database_processed.csv')
+    cols = df.columns
+    date_list = list(set(df.month))
+    return date_list
+
 def upload_to_s3(bucket_name: str, subname: str) -> None:
-    df = pd.read_csv('data/date.csv')
+    list_of_months = get_list_of_months()
     s3 = boto3.client("s3", endpoint_url=LOCALSTACK_URL, aws_access_key_id=AWS_ACCESS_KEY,
                       aws_secret_access_key=AWS_SECRET_KEY)
-    for i in set(df.month):
+    for i in list_of_months:
         filename = subname+i+".csv"    
-        s3.upload_file(Filename=filename, Key=filename, Bucket=bucket_name)
-        time.sleep(3)
+        s3.upload_file(Filename=filename, Key=i+".csv", Bucket=bucket_name)
+        time.sleep(1)
 
 def processed_by_pyspark_csv_saver():
     #saves pyspark dataframe into csv
