@@ -5,7 +5,6 @@ from decimal import Decimal
 import json
 
 
-
 def lambda_handler(event, context):
     msg = event['Records'][0]['body']
     print(msg)
@@ -18,21 +17,16 @@ def lambda_handler(event, context):
 
     table = dynamodb.Table(msg)
 
-    # get dataframe
     client = boto3.client('s3', 
         region_name="us-east-1",
         aws_access_key_id='xyz',
         aws_secret_access_key='aaa', 
         endpoint_url='http://localstack:4566')
 
-    # get object
     csv_obj = client.get_object(Bucket="test-bucket", Key=msg+'.csv')
     body = csv_obj['Body']
     df = pd.read_csv(io.BytesIO(body.read()))
 
-    # DynamoDB put_items called
-    # overwrite_keys = ['departure', 'return_date'] if 'departure' else None
-    # with table.batch_writer(overwrite_by_pkeys=overwrite_keys) as batch:
     with table.batch_writer() as batch:
         for i, row in df.iterrows():
             data = row.to_dict()
@@ -44,7 +38,3 @@ def lambda_handler(event, context):
 
     
     return "msg"
-
-
-
-# message = event['Records'][0]['Sqs']['Message']

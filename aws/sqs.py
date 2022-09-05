@@ -25,19 +25,6 @@ def create_client(service_name: str):
         )
     return boto3_client
 
-def create_sqs():
-    sqs = boto3.resource(
-        'sqs', 
-        region_name=AWS_REGION, 
-        endpoint_url=LOCALSTACK_URL,
-        aws_access_key_id=AWS_ACCESS_KEY, 
-        aws_secret_access_key=AWS_SECRET_KEY,
-        verify=False
-        )
-
-    queue = sqs.create_queue(QueueName='test', Attributes={'DelaySeconds': '5'})
-    return queue
-
 def send_message(client):
     response = client.send_message(
     QueueUrl = 'http://localhost:4566/000000000000/test',
@@ -54,29 +41,10 @@ def send_message(client):
     )
     print(response['MessageId'])
 
-
-
-def receive_message(client):
-    response = client.receive_message(
-    QueueUrl='http://localhost:4566/000000000000/test',
-    AttributeNames=[
-        'Policy',
-    ],
-    MessageAttributeNames=[
-        'Key',
-    ],
-    MaxNumberOfMessages=1,
-    VisibilityTimeout=1,
-    WaitTimeSeconds=1,
-    ReceiveRequestAttemptId='string'
-)
-    print(response)
-
 def aws_file():
     with open('my-deployment-package.zip', 'rb') as file_data:
         bytes_content = file_data.read()
     return bytes_content
-
 
 def create_lambda(client):
     response = client.create_function(
@@ -110,13 +78,7 @@ def delete_lambda(client):
     FunctionName='function1'
 )
 
-
-
-create_sqs()
 create_lambda(create_client('lambda'))
 trigger_lambda(create_client('lambda'))
-send_message(create_client('sqs'))
-receive_message(create_client('sqs'))
-
 # delete_lambda(create_client('lambda'))
 

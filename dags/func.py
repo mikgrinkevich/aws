@@ -16,6 +16,18 @@ load_dotenv('/home/nikol/internship/task8/task8/.env')
 AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 LOCALSTACK_URL = os.environ.get('LOCALSTACK_S3_URL')
+AWS_REGION = os.environ.get('AWS_REGION')
+
+def create_client(service_name: str):
+    boto3_client = boto3.client(
+        service_name, 
+        region_name=AWS_REGION, 
+        endpoint_url=LOCALSTACK_URL,
+        aws_access_key_id=AWS_ACCESS_KEY, 
+        aws_secret_access_key=AWS_SECRET_KEY,
+        verify=False
+        )
+    return boto3_client
 
 def get_list_of_months():
     # getting a list to iterate over
@@ -24,19 +36,29 @@ def get_list_of_months():
     date_list = list(set(df.month))
     return date_list
 
-def upload_to_s3(bucket_name: str, subname: str) -> None:
+def upload_raw_to_s3(bucket_name: str, subname: str) -> None:
     list_of_months = get_list_of_months()
-    s3 = boto3.client("s3", endpoint_url=LOCALSTACK_URL, aws_access_key_id=AWS_ACCESS_KEY,
-                      aws_secret_access_key=AWS_SECRET_KEY)
+    s3_client = create_client('s3')
+    client_sqs = create_client('sqs')
     for i in list_of_months:
         filename = subname+i+".csv"    
-        s3.upload_file(Filename=filename, Key=i+".csv", Bucket=bucket_name)
+        s3_client.upload_file(Filename=filename, Key=i+".csv", Bucket=bucket_name)
+        time.sleep(1)
+        send_message_sqs(client_sqs, i)
+        receive_message_sqs(client_sqs)
+
+
+def upload_pyspark_to_s3(bucket_name: str, subname: str) -> None:
+    list_of_months = get_list_of_months()
+    s3_client = create_client('s3')
+    for i in list_of_months:
+        filename = subname+i+".csv"    
+        s3_client.upload_file(Filename=filename, Key="processed_"+i+".csv", Bucket=bucket_name)
         time.sleep(1)
 
 def processed_by_pyspark_csv_saver():
-    #saves pyspark dataframe into csv
-    df = pd.read_csv('data/date.csv')
-    for i in set(df.month):
+    list_of_months = get_list_of_months()
+    for i in list_of_months:
         filename = "data/"+i+".csv"
         res = process_pyspark(filename)
         filename = "data/processed_"+i+".csv"
@@ -60,6 +82,40 @@ def process_pyspark(filename):
         
     return result
 
-# df = pd.read_csv('data/date.csv')
-# all_stuff = set(df.month)
-# print(all_stuff) 
+
+def send_message_sqs(client, year_month):
+    response = client.send_message(
+    QueueUrl = 'http://localhost:4566/000000000000/test',
+    DelaySeconds=3,
+    MessageAttributes={
+        'Key': {
+            'DataType': 'String',
+            'StringValue': '16_05'
+        }
+    },
+    MessageBody=(
+        year_month
+        )
+    )
+    print(response['MessageId'])
+
+
+def receive_message_sqs(client):
+    response = client.receive_message(
+    QueueUrl='http://localhost:4566/000000000000/test',
+    AttributeNames=[
+        'Policy',
+    ],
+    MessageAttributeNames=[
+        'Key',
+    ],
+    MaxNumberOfMessages=1,
+    VisibilityTimeout=1,
+    WaitTimeSeconds=1,
+    ReceiveRequestAttemptId='string'
+)
+    print(response)
+
+# send_message_sqs(create_client('sqs'))
+# receive_message_sqs(create_client('sqs'))
+
